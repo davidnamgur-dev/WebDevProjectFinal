@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Snake Game</title>
+<style>
+body{margin:0;background:#111;color:#fff;font-family:Arial,sans-serif;text-align:center}
+h1{color:#00f7ff}#menu,#gameover{padding:20px}
+#hud{display:none;justify-content:center;gap:30px;font-size:20px;margin:10px}
+canvas{display:none;background:#222;border:5px solid #00f7ff;margin:auto}
+button{padding:10px 18px;margin:8px;border:none;border-radius:8px;background:#ff6a00;color:#fff;font-size:16px;cursor:pointer}
+</style>
+</head>
+    
+<body>
+    
+<div class="common header">
+            
+            <span class="subheader">
+                <a href="Splatoon.html" > Splatoon </a> |
+                <a href="index.html" id="top">Resume</a> |
+                <a href="#"> Snake</a>
+                <br>
+            </span>
+            
+</div>    
+
+<div id="menu">
+<h1>Snake Game</h1>
+<p>Arrow Keys or WASD. Space pauses.</p>
+<button onclick="startGame()">Play</button>
+</div>
+<div id="hud">
+<div id="score">Score: 0</div>
+<div id="high">High: 0</div>
+<button onclick="togglePause()">Pause</button>
+</div>
+<canvas id="c" width="500" height="500"></canvas>
+<div id="gameover" style="display:none">
+<h2>Game Over!</h2>
+<p id="final"></p>
+<button onclick="restart()">Play Again</button>
+</div>
+<script>
+const cvs=document.getElementById("c"),ctx=cvs.getContext("2d"),b=20;
+let snake,food,dir,score,spd,loop,paused=false,parts=[];
+let hi=+localStorage.getItem("snakeHigh")||0;
+document.getElementById("high").textContent="High: "+hi;
+function beep(f,d){let a=new (window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);o.frequency.value=f;o.start();g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+d);}
+function rand(){return {x:Math.floor(Math.random()*25)*b,y:Math.floor(Math.random()*25)*b};}
+function startGame(){menu.style.display="none";gameover.style.display="none";hud.style.display="flex";cvs.style.display="block";snake=[{x:240,y:240}];food=rand();dir="R";score=0;spd=120;paused=false;parts=[];updateHud();clearInterval(loop);loop=setInterval(draw,spd);}
+function restart(){startGame();}
+function updateHud(){scoreEl.textContent="Score: "+score;high.textContent="High: "+hi;}
+const scoreEl=document.getElementById("score"),menu=document.getElementById("menu"),hud=document.getElementById("hud"),gameover=document.getElementById("gameover");
+document.addEventListener("keydown",e=>{
+let k=e.key.toLowerCase();
+if(k==" "){togglePause();return;}
+if((k=="arrowleft"||k=="a")&&dir!="R")dir="L";
+if((k=="arrowright"||k=="d")&&dir!="L")dir="R";
+if((k=="arrowup"||k=="w")&&dir!="D")dir="U";
+if((k=="arrowdown"||k=="s")&&dir!="U")dir="D";
+});
+function togglePause(){paused=!paused;}
+function explode(x,y){for(let i=0;i<15;i++)parts.push({x,y,vx:(Math.random()-.5)*6,vy:(Math.random()-.5)*6,l:25});}
+function draw(){
+if(paused)return;
+ctx.fillStyle="#222";ctx.fillRect(0,0,500,500);
+parts.forEach((p,i)=>{ctx.fillStyle="orange";ctx.fillRect(p.x,p.y,4,4);p.x+=p.vx;p.y+=p.vy;p.l--;if(p.l<0)parts.splice(i,1);});
+ctx.fillStyle="orange";
+ctx.beginPath();
+for(let i=0;i<8;i++){let a=i*Math.PI/4;ctx.lineTo(food.x+10+Math.cos(a)*10,food.y+10+Math.sin(a)*10);}ctx.fill();
+snake.forEach((s,i)=>{ctx.fillStyle=i?"#00c96b":"#00ffee";ctx.fillRect(s.x,s.y,b,b);});
+let h={x:snake[0].x,y:snake[0].y};
+if(dir=="L")h.x-=b;if(dir=="R")h.x+=b;if(dir=="U")h.y-=b;if(dir=="D")h.y+=b;
+if(h.x<0||h.y<0||h.x>=500||h.y>=500||snake.some(s=>s.x==h.x&&s.y==h.y)){
+beep(120,.5);clearInterval(loop);if(score>hi){hi=score;localStorage.setItem("snakeHigh",hi);}
+hud.style.display="none";cvs.style.display="none";gameover.style.display="block";final.textContent="Final Score: "+score+" | High Score: "+hi;return;}
+snake.unshift(h);
+if(h.x==food.x&&h.y==food.y){
+score++;beep(600,.1);explode(food.x+10,food.y+10);food=rand();updateHud();
+if(score%5==0){spd=Math.max(50,spd-10);clearInterval(loop);loop=setInterval(draw,spd);}
+}else snake.pop();
+}
+</script>
+</body>
+
+</html>
